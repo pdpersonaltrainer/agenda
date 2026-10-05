@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mi agenda de entrenamientos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF2F6; --surface:#FFFFFF; --ink:#18212F; --muted:#5E6B7D; --line:#D8DFE8;
+  --session:#2B5CE6; --session-soft:#E3EAFD;
+  --gym:#0F8A5F; --gym-soft:#DDF3EA;
+  --food:#B9731A; --food-soft:#FBEED9;
+  --admin:#5A55C9; --admin-soft:#E9E8FB;
+  --plan:#7A8798; --warn:#C93A3A; --warn-soft:#FBE4E4;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#10151D; --surface:#19202B; --ink:#E8EDF4; --muted:#93A0B2; --line:#2B3442;
+    --session:#7FA0FF; --session-soft:#1F2D52;
+    --gym:#4CC994; --gym-soft:#163A2D;
+    --food:#E9A94F; --food-soft:#3D2E16;
+    --admin:#A9A4FF; --admin-soft:#2A2850;
+    --plan:#8794A6; --warn:#FF8A8A; --warn-soft:#4A1F22;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10151D; --surface:#19202B; --ink:#E8EDF4; --muted:#93A0B2; --line:#2B3442;
+  --session:#7FA0FF; --session-soft:#1F2D52;
+  --gym:#4CC994; --gym-soft:#163A2D;
+  --food:#E9A94F; --food-soft:#3D2E16;
+  --admin:#A9A4FF; --admin-soft:#2A2850;
+  --plan:#8794A6; --warn:#FF8A8A; --warn-soft:#4A1F22;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Manrope,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased}
+.wrap{max-width:560px;margin:0 auto;padding:16px 16px 110px}
+h1{font-size:1.6rem;font-weight:800;letter-spacing:-.02em;margin:4px 0 2px}
+h2{font-size:1.05rem;font-weight:700;margin:0 0 10px}
+.sub{color:var(--muted);font-size:.9rem;margin:0}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--session);outline-offset:2px}
+
+.datebar{display:flex;align-items:center;gap:8px;margin:14px 0 10px}
+.datebar .day{flex:1;text-align:center}
+.datebar .day strong{display:block;font-size:1.15rem;text-transform:capitalize}
+.iconbtn{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--surface);font-size:1.2rem;display:grid;place-items:center}
+.quick{display:flex;gap:8px;justify-content:center;margin-bottom:14px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;font-size:.88rem;font-weight:600}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form label{display:flex;flex-direction:column;gap:4px;font-size:.82rem;color:var(--muted);font-weight:600}
+.form .full{grid-column:1/-1}
+select,input[type=time],input[type=text],input[type=number]{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);font-size:1rem;min-height:44px}
+.seg{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--bg)}
+.seg button{flex:1;border:0;background:transparent;padding:10px 0;font-weight:600;min-height:44px}
+.seg button[aria-pressed="true"]{background:var(--session);color:#fff}
+.primary{border:0;border-radius:12px;background:var(--session);color:#fff;font-weight:700;padding:12px;min-height:46px}
+.ghost{border:1px solid var(--line);border-radius:12px;background:transparent;font-weight:600;padding:12px;min-height:46px}
+.danger{border:1px solid var(--warn);color:var(--warn);border-radius:12px;background:transparent;font-weight:700;padding:12px;min-height:46px}
+.actions{display:flex;gap:8px;grid-column:1/-1}
+.actions>*{flex:1}
+
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.stat b{display:block;font-size:1.25rem;font-weight:800;letter-spacing:-.02em}
+.stat span{font-size:.78rem;color:var(--muted)}
+.stat.bad b{color:var(--warn)}
+
+/* timeline */
+.tl{list-style:none;margin:0;padding:0;position:relative}
+.tl::before{content:"";position:absolute;left:58px;top:6px;bottom:6px;width:2px;background:var(--line)}
+.tl li{display:grid;grid-template-columns:50px 1fr;gap:16px;margin-bottom:8px;position:relative}
+.tl .t{font-weight:700;font-size:.88rem;text-align:right;padding-top:10px;font-variant-numeric:tabular-nums}
+.blk{border-radius:14px;padding:10px 12px;border-left:4px solid;position:relative}
+.blk .ttl{font-weight:700;font-size:.97rem}
+.blk .meta{font-size:.82rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.blk.session{background:var(--session-soft);border-color:var(--session);cursor:pointer}
+.blk.session .ttl{color:var(--session)}
+.blk.gym{background:var(--gym-soft);border-color:var(--gym)}
+.blk.food{background:var(--food-soft);border-color:var(--food)}
+.blk.admin{background:var(--admin-soft);border-color:var(--admin)}
+.blk.plan{background:transparent;border:1.5px dashed var(--plan);border-left:4px dashed var(--plan)}
+.blk.plan .ttl{color:var(--muted);font-weight:600}
+.blk.rest{background:transparent;border-color:var(--line)}
+.blk.conflict{outline:2px solid var(--warn)}
+.flag{font-size:.78rem;font-weight:700;color:var(--warn);margin-top:2px}
+.note{font-size:.78rem;color:var(--food);font-weight:600;margin-top:2px}
+
+.empty{color:var(--muted);text-align:center;padding:12px 0 4px;font-size:.92rem}
+
+/* week */
+.week li{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)}
+.week li:last-child{border-bottom:0}
+.week ul{list-style:none;margin:0;padding:0}
+.week .nm{flex:1;font-weight:600;font-size:.93rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dots{display:flex;gap:4px}
+.dots i{width:12px;height:12px;border-radius:50%;border:2px solid var(--session)}
+.dots i.on{background:var(--session)}
+.dots i.over{background:var(--warn);border-color:var(--warn)}
+.cnt{font-size:.82rem;color:var(--muted);width:34px;text-align:right;font-variant-numeric:tabular-nums}
+
+/* students */
+.stu{display:grid;grid-template-columns:1fr 92px 64px 36px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.stu:last-of-type{border-bottom:0}
+.stu input,.stu select{min-height:40px;padding:8px 10px;font-size:.93rem}
+.x{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--muted)}
+.hint{font-size:.85rem;color:var(--muted);margin:8px 0 0}
+.rgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.rgrid label{display:flex;flex-direction:column;gap:4px;font-size:.82rem;color:var(--muted);font-weight:600}
+
+/* tabs */
+.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+.tabs button{flex:1;max-width:186px;border:0;background:transparent;padding:10px 0 12px;font-weight:700;font-size:.85rem;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px}
+.tabs button span{font-size:1.25rem}
+.tabs button[aria-selected="true"]{color:var(--session)}
+.hidden{display:none!important}
+.saved{font-size:.78rem;color:var(--muted);text-align:center;margin-top:6px;min-height:1em}
+@media (prefers-reduced-motion:no-preference){.blk.session{transition:transform .12s}.blk.session:active{transform:scale(.98)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Mi agenda</h1>
+    <p class="sub">Cargá las confirmaciones y el día se arma solo.</p>
+  </header>
+
+  <!-- DÍA -->
+  <section id="tab-dia">
+    <div class="datebar">
+      <button class="iconbtn" id="prev" aria-label="Día anterior">‹</button>
+      <div class="day"><strong id="dlabel"></strong><span class="sub" id="dsub"></span></div>
+      <button class="iconbtn" id="next" aria-label="Día siguiente">›</button>
+    </div>
+    <div class="quick">
+      <button class="chip" id="qHoy">Hoy</button>
+      <button class="chip" id="qMan">Mañana</button>
+    </div>
+
+    <div class="panel">
+      <h2 id="formTitle">Agregar sesión confirmada</h2>
+      <div class="form">
+        <label class="full">Alumna<select id="fAlumna"></select></label>
+        <label>Hora de inicio (España)<input type="time" id="fHora" value="12:30" step="300"></label>
+        <label>Duración
+          <div class="seg" id="fDur">
+            <button type="button" data-v="60">1 h</button>
+            <button type="button" data-v="75">1:15</button>
+            <button type="button" data-v="90">1:30</button>
+          </div>
+        </label>
+        <div class="actions" id="addActions"><button class="primary" id="btnAdd">Agregar sesión</button></div>
+        <div class="actions hidden" id="editActions">
+          <button class="danger" id="btnDel">Eliminar</button>
+          <button class="ghost" id="btnCancel">Cancelar</button>
+          <button class="primary" id="btnSave">Guardar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="panel">
+      <h2>Tu día</h2>
+      <ul class="tl" id="tl"></ul>
+    </div>
+
+    <div class="panel week">
+      <h2 id="wTitle">Esta semana</h2>
+      <ul id="week"></ul>
+      <p class="hint" id="wHint"></p>
+    </div>
+  </section>
+
+  <!-- ALUMNAS -->
+  <section id="tab-alumnas" class="hidden">
+    <div class="panel">
+      <h2>Tus alumnas</h2>
+      <div class="stu" style="border:0;padding-bottom:0"><span class="sub">Nombre</span><span class="sub">Lugar</span><span class="sub">Veces/sem</span><span></span></div>
+      <div id="stuList"></div>
+      <button class="ghost" id="addStu" style="width:100%;margin-top:12px">Agregar alumna</button>
+      <p class="hint">Escribí los nombres reales: aparecen en el selector y en el resumen semanal.</p>
+    </div>
+  </section>
+
+  <!-- RUTINA -->
+  <section id="tab-rutina" class="hidden">
+    <div class="panel">
+      <h2>Tu rutina fija</h2>
+      <div class="rgrid" id="rForm"></div>
+      <p class="hint">Las comidas se corren solas si una sesión las pisa, pero nunca se saltean. Los huecos de más de 25 minutos se marcan para planificar o descansar.</p>
+    </div>
+    <div class="panel">
+      <h2>Copia de seguridad</h2>
+      <p class="sub" id="bkInfo"></p>
+      <div class="actions" style="margin-top:12px">
+        <button class="primary" id="bkSave">Guardar copia</button>
+        <button class="ghost" id="bkLoad">Restaurar copia</button>
+      </div>
+      <input type="file" id="bkFile" accept=".json,application/json" class="hidden">
+      <p class="hint">La copia es un archivo que queda en la app Archivos del iPad. Hacé una por semana y, si cambiás de dispositivo o se borran los datos, la restaurás con un toque.</p>
+    </div>
+    <div class="panel">
+      <h2>Regla para tus alumnas</h2>
+      <p class="sub" id="ruleTxt"></p>
+    </div>
+  </section>
+  <p class="saved" id="saved"></p>
+</div>
+
+<nav class="tabs" role="tablist">
+  <button role="tab" aria-selected="true" data-tab="dia"><span>📅</span>Día</button>
+  <button role="tab" aria-selected="false" data-tab="alumnas"><span>👟</span>Alumnas</button>
+  <button role="tab" aria-selected="false" data-tab="rutina"><span>⏰</span>Rutina</button>
+</nav>
+
+<script>
+const HOME='Europe/Madrid';
+const PLACES={
+  AR:{n:'Argentina',f:'🇦🇷',tz:'America/Argentina/Buenos_Aires'},
+  BR:{n:'Brasil',f:'🇧🇷',tz:'America/Sao_Paulo'},
+  NY:{n:'Nueva York',f:'🇺🇸',tz:'America/New_York'},
+  CA:{n:'California',f:'🇺🇸',tz:'America/Los_Angeles'},
+  IT:{n:'Italia',f:'🇮🇹',tz:'Europe/Rome'},
+  ES:{n:'España',f:'🇪🇸',tz:'Europe/Madrid'}
+};
+const uid=()=>Math.random().toString(36).slice(2,9);
+const DEFAULT=()=>({
+  v:1,
+  alumnas:[
+    {id:'a1',nombre:'Argentina 1',lugar:'AR',freq:3},
+    {id:'a2',nombre:'Argentina 2',lugar:'AR',freq:3},
+    {id:'a3',nombre:'Argentina 3',lugar:'AR',freq:3},
+    {id:'a4',nombre:'Argentina 4',lugar:'AR',freq:2},
+    {id:'a5',nombre:'Argentina 5',lugar:'AR',freq:2},
+    {id:'a6',nombre:'Argentina 6',lugar:'AR',freq:2},
+    {id:'a7',nombre:'California',lugar:'CA',freq:3},
+    {id:'a8',nombre:'Nueva York',lugar:'NY',freq:3},
+    {id:'a9',nombre:'Milán',lugar:'IT',freq:2}
+  ],
+  rutina:{despertar:'07:30',gymIni:'08:30',gymFin:'10:00',desayunoFin:'10:45',mensajesFin:'11:20',comida:'13:30',comidaDur:90,merienda:'16:30',cena:'20:15',cenaDur:45,limite:'21:00'},
+  sesiones:{
+    '2026-10-06':[{id:uid(),alumna:'',ini:'12:30',dur:90},{id:uid(),alumna:'',ini:'18:30',dur:90}]
+  }
+});
+let S=DEFAULT();
+
+/* ---------- time helpers ---------- */
+const toMin=s=>{const[h,m]=s.split(':').map(Number);return h*60+m};
+const fmt=m=>{m=((m%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')};
+const durTxt=m=>{const h=Math.floor(m/60),r=m%60;return h?(h+' h'+(r?' '+r:'')):r+' min'};
+function tzOffset(tz,date){
+  const p={};new Intl.DateTimeFormat('en-US',{timeZone:tz,hourCycle:'h23',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'}).formatToParts(date).forEach(x=>p[x.type]=x.value);
+  const asUTC=Date.UTC(+p.year,+p.month-1,+p.day,+p.hour%24,+p.minute,+p.second);
+  return (asUTC-date.getTime())/60000;
+}
+function madridToDate(ymd,min){
+  const[y,mo,d]=ymd.split('-').map(Number);
+  const guess=Date.UTC(y,mo-1,d,0,min);
+  let off=tzOffset(HOME,new Date(guess));
+  let t=guess-off*60000;
+  off=tzOffset(HOME,new Date(t));
+  return new Date(guess-off*60000);
+}
+function localTime(ymd,min,tz){
+  return new Intl.DateTimeFormat('es-ES',{timeZone:tz,hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(madridToDate(ymd,min));
+}
+function todayMadrid(){
+  const p={};new Intl.DateTimeFormat('en-CA',{timeZone:HOME,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).forEach(x=>p[x.type]=x.value);
+  return `${p.year}-${p.month}-${p.day}`;
+}
+function addDays(ymd,n){const[y,m,d]=ymd.split('-').map(Number);const t=new Date(Date.UTC(y,m-1,d+n,12));return t.toISOString().slice(0,10)}
+function dow(ymd){const[y,m,d]=ymd.split('-').map(Number);return new Date(Date.UTC(y,m-1,d,12)).getUTCDay()}
+function labelDate(ymd,opt){const[y,m,d]=ymd.split('-').map(Number);return new Date(Date.UTC(y,m-1,d,12)).toLocaleDateString('es-ES',Object.assign({timeZone:'UTC'},opt))}
+
+/* ---------- state ---------- */
+let cur=todayMadrid();
+let dur=60, editing=null;
+const $=id=>document.getElementById(id);
+const alumna=id=>S.alumnas.find(a=>a.id===id);
+
+/* ---------- schedule builder ---------- */
+function build(ymd){
+  const R=S.rutina;
+  const sess=(S.sesiones[ymd]||[]).map(x=>({t:'session',s:toMin(x.ini),e:toMin(x.ini)+x.dur,ref:x})).sort((a,b)=>a.s-b.s);
+  const fixed=[
+    {t:'rest',s:toMin(R.despertar),e:toMin(R.despertar)+20,label:'Despertar y desayuno liviano'},
+    {t:'gym',s:toMin(R.gymIni),e:toMin(R.gymFin),label:'Tu entrenamiento'},
+    {t:'food',s:toMin(R.gymFin),e:toMin(R.desayunoFin),label:'Ducha y segundo desayuno'},
+    {t:'admin',s:toMin(R.desayunoFin),e:toMin(R.mensajesFin),label:'Mensajes y check-ins'}
+  ];
+  const ov=(a,b,c,d)=>a<d&&c<b;
+  sess.forEach((x,i)=>{
+    x.conflicts=[];
+    fixed.forEach(f=>{if(ov(x.s,x.e,f.s,f.e))x.conflicts.push(f.label.toLowerCase())});
+    sess.forEach((y,j)=>{if(i!==j&&ov(x.s,x.e,y.s,y.e))x.conflicts.push('otra sesión')});
+  });
+  const occ=[...fixed,...sess];
+  const lim=toMin(R.limite);
+  const flex=[
+    {t:'food',pref:toMin(R.comida),dur:+R.comidaDur,label:'Comida y siesta',max:toMin(R.comida)+180},
+    {t:'food',pref:toMin(R.merienda),dur:20,label:'Merienda',max:toMin(R.merienda)+150},
+    {t:'food',pref:toMin(R.cena),dur:+R.cenaDur,label:'Cena',max:toMin(R.cena)+150},
+    {t:'admin',pref:lim+15,dur:15,label:'Cerrar la agenda de mañana',max:lim+240}
+  ];
+  const placed=[];
+  flex.forEach(f=>{
+    let s=f.pref,guard=0,hit;
+    while((hit=[...occ,...placed].find(o=>ov(s,s+f.dur,o.s,o.e)))&&guard++<30)s=hit.e;
+    const b={t:f.t,s,e:s+f.dur,label:f.label};
+    if(s>f.max)b.warn='No hay lugar razonable: revisá los horarios';
+    else if(s!==f.pref)b.note=`Corrida ${durTxt(s-f.pref)} por una sesión`;
+    if(f.label.startsWith('Comida')&&s-f.pref>=60)b.label='Comida (siesta corta)';
+    placed.push(b);
+  });
+  let all=[...occ,...placed].sort((a,b)=>a.s-b.s);
+  const startGap=toMin(R.mensajesFin);
+  const out=[];let cursor=startGap;
+  all.forEach(b=>{
+    if(b.s>=startGap&&b.s-cursor>=25){
+      out.push({t:cursor<lim?'plan':'rest',s:cursor,e:b.s,label:cursor<lim?'Hueco: planificación o descanso':'Tiempo libre'});
+    }
+    out.push(b);
+    cursor=Math.max(cursor,b.e);
+  });
+  const end=Math.max(...all.map(b=>b.e));
+  const sleep=end+40;
+  out.push({t:'rest',s:end,e:sleep,label:'Desconexión, sin pantallas'});
+  const sleepH=(1440+toMin(R.despertar))-sleep;
+  return {blocks:out,sess,end,sleep,sleepH};
+}
+
+/* ---------- render ---------- */
+function renderSelect(){
+  const sel=$('fAlumna');const v=sel.value;
+  sel.innerHTML='<option value="">Sin asignar</option>'+S.alumnas.map(a=>`<option value="${a.id}">${PLACES[a.lugar].f} ${esc(a.nombre)}</option>`).join('');
+  sel.value=v&&alumna(v)?v:'';
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function setDur(v){dur=v;[...$('fDur').children].forEach(b=>b.setAttribute('aria-pressed',+b.dataset.v===v))}
+
+function renderDay(){
+  const t=todayMadrid();
+  $('dlabel').textContent=labelDate(cur,{weekday:'long'});
+  $('dsub').textContent=labelDate(cur,{day:'numeric',month:'long'});
+  $('qHoy').setAttribute('aria-pressed',cur===t);
+  $('qMan').setAttribute('aria-pressed',cur===addDays(t,1));
+  const B=build(cur);
+  const n=B.sess.length,mins=B.sess.reduce((a,x)=>a+(x.e-x.s),0);
+  const short=B.sleepH<420;
+  $('stats').innerHTML=`
+    <div class="stat"><b>${n}</b><span>${n===1?'sesión':'sesiones'}</span></div>
+    <div class="stat"><b>${fmt(B.end)}</b><span>terminás</span></div>
+    <div class="stat ${short?'bad':''}"><b>${Math.floor(B.sleepH/60)} h${B.sleepH%60?' '+String(B.sleepH%60).padStart(2,'0'):''}</b><span>de sueño posible</span></div>`;
+  const tl=$('tl');
+  if(dow(cur)===0&&!n){tl.innerHTML='<li style="display:block"><p class="empty">Domingo: día libre. Buen momento para el batch cooking de la semana.</p></li>';}
+  else tl.innerHTML=B.blocks.map(b=>{
+    if(b.t==='session'){
+      const x=b.ref,a=alumna(x.alumna);
+      const pl=a?PLACES[a.lugar]:null;
+      const loc=a&&a.lugar!=='ES'&&a.lugar!=='IT'?`${pl.f} ${localTime(cur,b.s,pl.tz)} a ${localTime(cur,b.e,pl.tz)} allá`:(a?`${pl.f} misma hora`:'Tocá para asignar alumna');
+      return `<li><span class="t">${fmt(b.s)}</span><div class="blk session ${b.conflicts.length?'conflict':''}" role="button" tabindex="0" data-edit="${x.id}">
+        <div class="ttl">${a?esc(a.nombre):'Sesión sin asignar'}</div>
+        <div class="meta">${fmt(b.s)} a ${fmt(b.e)} · ${loc}</div>
+        ${b.conflicts.length?`<div class="flag">Se superpone con: ${[...new Set(b.conflicts)].join(', ')}</div>`:''}
+      </div></li>`;
+    }
+    return `<li><span class="t">${fmt(b.s)}</span><div class="blk ${b.t}">
+      <div class="ttl">${b.label}</div>
+      <div class="meta">${fmt(b.s)} a ${fmt(b.e)}</div>
+      ${b.warn?`<div class="flag">${b.warn}</div>`:b.note?`<div class="note">${b.note}</div>`:''}
+    </div></li>`;
+  }).join('')+`<li><span class="t">${fmt(B.sleep)}</span><div class="blk rest"><div class="ttl">A dormir</div><div class="meta">${short?'Menos de 7 h hasta las '+S.rutina.despertar+': priorizá la siesta':'Despertador a las '+S.rutina.despertar}</div></div></li>`;
+  tl.querySelectorAll('[data-edit]').forEach(el=>{
+    const go=()=>startEdit(el.dataset.edit);
+    el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}};
+  });
+  renderWeek();
+}
+function renderWeek(){
+  const d=dow(cur);const mon=addDays(cur,-((d+6)%7));
+  const days=[0,1,2,3,4,5].map(i=>addDays(mon,i));
+  const cnt={};let unassigned=0;
+  days.forEach(x=>(S.sesiones[x]||[]).forEach(s=>{if(s.alumna&&alumna(s.alumna))cnt[s.alumna]=(cnt[s.alumna]||0)+1;else unassigned++}));
+  $('wTitle').textContent=`Semana del ${labelDate(mon,{day:'numeric'})} al ${labelDate(days[5],{day:'numeric',month:'long'})}`;
+  $('week').innerHTML=S.alumnas.map(a=>{
+    const c=cnt[a.id]||0;let dots='';
+    for(let i=0;i<Math.max(a.freq,c);i++)dots+=`<i class="${i<c?(i>=a.freq?'over':'on'):''}"></i>`;
+    return `<li><span>${PLACES[a.lugar].f}</span><span class="nm">${esc(a.nombre)}</span><span class="dots">${dots}</span><span class="cnt">${c}/${a.freq}</span></li>`;
+  }).join('');
+  const total=S.alumnas.reduce((a,x)=>a+ +x.freq,0),done=Object.values(cnt).reduce((a,b)=>a+b,0);
+  $('wHint').textContent=`${done} de ${total} sesiones cargadas`+(unassigned?` y ${unassigned} sin asignar.`:'.');
+}
+
+function startEdit(id){
+  const x=(S.sesiones[cur]||[]).find(s=>s.id===id);if(!x)return;
+  editing=id;$('fAlumna').value=x.alumna&&alumna(x.alumna)?x.alumna:'';$('fHora').value=x.ini;setDur(x.dur);
+  $('formTitle').textContent='Editar sesión';
+  $('addActions').classList.add('hidden');$('editActions').classList.remove('hidden');
+  window.scrollTo({top:$('formTitle').getBoundingClientRect().top+window.scrollY-80,behavior:'smooth'});
+}
+function stopEdit(){
+  editing=null;$('formTitle').textContent='Agregar sesión confirmada';
+  $('addActions').classList.remove('hidden');$('editActions').classList.add('hidden');
+}
+
+function renderStudents(){
+  $('stuList').innerHTML=S.alumnas.map(a=>`<div class="stu" data-id="${a.id}">
+    <input type="text" value="${esc(a.nombre)}" data-k="nombre" aria-label="Nombre">
+    <select data-k="lugar" aria-label="Lugar">${Object.entries(PLACES).map(([k,p])=>`<option value="${k}" ${k===a.lugar?'selected':''}>${p.f} ${p.n}</option>`).join('')}</select>
+    <select data-k="freq" aria-label="Veces por semana">${[1,2,3,4,5,6].map(n=>`<option ${n==a.freq?'selected':''}>${n}</option>`).join('')}</select>
+    <button class="x" data-del aria-label="Quitar ${esc(a.nombre)}">×</button></div>`).join('');
+  $('stuList').querySelectorAll('.stu').forEach(row=>{
+    const a=alumna(row.dataset.id);
+    row.querySelectorAll('[data-k]').forEach(inp=>inp.onchange=()=>{a[inp.dataset.k]=inp.dataset.k==='freq'?+inp.value:inp.value;save();renderSelect()});
+    row.querySelector('[data-del]').onclick=()=>{
+      if(!confirm(`¿Quitar a ${a.nombre}? Sus sesiones quedan como "sin asignar".`))return;
+      S.alumnas=S.alumnas.filter(x=>x!==a);save();renderStudents();renderSelect();
+    };
+  });
+}
+const RFIELDS=[
+  ['despertar','Despertar','time'],['gymIni','Gym: inicio','time'],['gymFin','Gym: fin','time'],
+  ['desayunoFin','Fin del 2.º desayuno','time'],['mensajesFin','Fin de mensajes','time'],
+  ['comida','Comida','time'],['comidaDur','Comida + siesta (min)','number'],
+  ['merienda','Merienda','time'],['cena','Cena','time'],['cenaDur','Duración cena (min)','number'],
+  ['limite','Límite para confirmar','time']
+];
+function renderRutina(){
+  $('rForm').innerHTML=RFIELDS.map(([k,l,t])=>`<label>${l}<input type="${t}" data-k="${k}" value="${S.rutina[k]}" ${t==='number'?'min="15" max="180" step="5"':'step="300"'}></label>`).join('');
+  $('rForm').querySelectorAll('input').forEach(i=>i.onchange=()=>{if(!i.value)return;S.rutina[i.dataset.k]=i.type==='number'?+i.value:i.value;save();renderRule()});
+  renderRule();
+}
+function renderRule(){
+  const L=toMin(S.rutina.limite);const ar=localTime(cur,L,PLACES.AR.tz),ny=localTime(cur,L,PLACES.NY.tz),ca=localTime(cur,L,PLACES.CA.tz);
+  $('ruleTxt').textContent=`Confirman el horario del día siguiente hasta las ${S.rutina.limite} de España (${ar} en Argentina, ${ny} en Nueva York, ${ca} en California). A las ${fmt(L+15)} cerrás la agenda y el resto de los huecos queda para planificar o descansar.`;
+}
+
+/* ---------- backup ---------- */
+function renderBackup(){
+  $('bkInfo').textContent=S.ultimaCopia?('Última copia: '+new Date(S.ultimaCopia).toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'})+'.'):'Todavía no guardaste ninguna copia.';
+}
+async function backup(){
+  S.ultimaCopia=Date.now();
+  const name='agenda-copia-'+todayMadrid()+'.json';
+  const json=JSON.stringify(S,null,2);
+  let done=false;
+  try{
+    if(window.claude&&window.claude.use){
+      const dl=await window.claude.use('downloads');
+      if(dl){await dl.save({filename:name,data:json});done=true}
+    }
+  }catch(e){if(e&&e.code&&e.code!=='unavailable'){delete S.ultimaCopia;return}}
+  if(!done){
+    const url=URL.createObjectURL(new Blob([json],{type:'application/json'}));
+    const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),4000);
+  }
+  save();renderBackup();
+}
+$('bkSave').onclick=backup;
+$('bkLoad').onclick=()=>$('bkFile').click();
+$('bkFile').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const obj=JSON.parse(r.result);
+      if(!obj.alumnas||!obj.rutina||!obj.sesiones)throw 0;
+      if(!confirm('¿Restaurar esta copia? Reemplaza los datos actuales de la agenda.'))return;
+      load(obj);save();renderBackup();renderRutina();renderSelect();renderDay();
+      alert('Copia restaurada.');
+    }catch(err){alert('Ese archivo no es una copia de la agenda. Elegí un archivo que empiece con "agenda-copia".')}
+    $('bkFile').value='';
+  };
+  r.readAsText(f);
+};
+
+/* ---------- events ---------- */
+$('prev').onclick=()=>{cur=addDays(cur,-1);stopEdit();renderDay()};
+$('next').onclick=()=>{cur=addDays(cur,1);stopEdit();renderDay()};
+$('qHoy').onclick=()=>{cur=todayMadrid();stopEdit();renderDay()};
+$('qMan').onclick=()=>{cur=addDays(todayMadrid(),1);stopEdit();renderDay()};
+[...$('fDur').children].forEach(b=>b.onclick=()=>setDur(+b.dataset.v));
+$('btnAdd').onclick=()=>{
+  const ini=$('fHora').value;if(!ini)return;
+  (S.sesiones[cur]=S.sesiones[cur]||[]).push({id:uid(),alumna:$('fAlumna').value,ini,dur});
+  save();renderDay();
+};
+$('btnSave').onclick=()=>{
+  const x=(S.sesiones[cur]||[]).find(s=>s.id===editing);
+  if(x){x.alumna=$('fAlumna').value;x.ini=$('fHora').value||x.ini;x.dur=dur}
+  stopEdit();save();renderDay();
+};
+$('btnDel').onclick=()=>{S.sesiones[cur]=(S.sesiones[cur]||[]).filter(s=>s.id!==editing);stopEdit();save();renderDay()};
+$('btnCancel').onclick=()=>stopEdit();
+$('addStu').onclick=()=>{S.alumnas.push({id:uid(),nombre:'Nueva alumna',lugar:'AR',freq:2});save();renderStudents();renderSelect()};
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tabs button').forEach(x=>x.setAttribute('aria-selected',x===b));
+  ['dia','alumnas','rutina'].forEach(t=>$('tab-'+t).classList.toggle('hidden',t!==b.dataset.tab));
+  if(b.dataset.tab==='dia'){renderSelect();renderDay()}
+  if(b.dataset.tab==='alumnas')renderStudents();
+  if(b.dataset.tab==='rutina'){renderRutina();renderBackup()}
+  window.scrollTo(0,0);
+});
+
+/* ---------- persistence ---------- */
+const LS='agenda-entrenos-v1';
+let dbRef=null,timer=null;
+function save(){
+  try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}
+  clearTimeout(timer);
+  timer=setTimeout(async()=>{
+    if(!dbRef)return;
+    try{await dbRef.set(JSON.parse(JSON.stringify(S)));$('saved').textContent='Guardado'}catch(e){$('saved').textContent='Guardado en este dispositivo'}
+  },700);
+}
+function load(obj){if(obj&&obj.alumnas&&obj.rutina&&obj.sesiones){S=obj;S.rutina=Object.assign(DEFAULT().rutina,S.rutina)}}
+try{const raw=localStorage.getItem(LS);if(raw)load(JSON.parse(raw))}catch(e){}
+setDur(60);renderSelect();renderDay();
+
+(async()=>{
+  try{
+    if(!window.claude||!window.claude.use)return;
+    const [db,user]=await Promise.all([window.claude.use('db'),window.claude.use('user')]);
+    if(!db||!user)return;
+    const id=await user.id();if(!id)return;
+    dbRef=db.doc('data/users/'+id+'/agenda');
+    const snap=await dbRef.get();
+    if(snap.exists){load(JSON.parse(JSON.stringify(snap.data())));try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}renderSelect();renderDay();}
+    else save();
+  }catch(e){dbRef=null}
+})();
+</script>
+</body>
+</html>
