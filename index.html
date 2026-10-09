@@ -130,10 +130,35 @@ select{padding-right:34px;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 
 /* tabs */
 .tabs{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
-.tabs button{flex:1;max-width:186px;border:0;background:transparent;padding:10px 0 12px;font-weight:700;font-size:.85rem;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px}
+.tabs button{flex:1;max-width:160px;border:0;background:transparent;padding:10px 0 12px;font-weight:700;font-size:.85rem;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px}
 .tabs button span{font-size:1.25rem}
 .tabs button[aria-selected="true"]{color:var(--session)}
 .hidden{display:none!important}
+.wrap.wide{max-width:1040px}
+.ent{display:grid;gap:14px}
+@media (min-width:760px){.ent{grid-template-columns:320px 1fr;align-items:start}.ent .panel{margin-bottom:0}}
+.elist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.elist button{width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid transparent;border-radius:12px;background:transparent;text-align:left;min-height:54px}
+.elist button[aria-pressed="true"]{background:var(--session-soft);border-color:var(--session)}
+.elist .nm{flex:1;white-space:normal!important;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.elist .mc{flex:none;font-size:.78rem;color:var(--muted);text-align:right;line-height:1.3;font-variant-numeric:tabular-nums}
+.elist .mc b{display:block;color:var(--ink);font-size:.95rem}
+.calhead{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.calhead .day{flex:1;text-align:center;min-width:0}
+.calhead strong{display:block;font-size:1.15rem}
+.cal{max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.cal .wd{text-align:center;font-size:.75rem;font-weight:700;color:var(--muted);padding-bottom:2px}
+.cal button{aspect-ratio:1/1;max-height:64px;width:100%;border-radius:12px;border:1px solid var(--line);background:var(--bg);font-weight:700;font-size:.95rem;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-height:40px;padding:0;font-variant-numeric:tabular-nums}
+.cal .blank{visibility:hidden}
+.cal button.done{background:var(--btn);border-color:var(--btn);color:#fff}
+.cal button.plan{border:2px dashed var(--session);color:var(--session)}
+.cal button.today{outline:2px solid var(--gym);outline-offset:1px}
+.cal button.future{color:var(--muted)}
+.cal button small{font-size:.62rem;font-weight:600;opacity:.9}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;font-size:.8rem;color:var(--muted)}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:14px;height:14px;border-radius:4px;display:inline-block}
+.calmsg{min-height:1.4em;font-size:.88rem;color:var(--admin);font-weight:600;margin:10px 0 0}
 .saved{font-size:.78rem;color:var(--muted);text-align:center;margin-top:6px;min-height:1em}
 @media (prefers-reduced-motion:no-preference){.blk.session{transition:transform .12s}.blk.session:active{transform:scale(.98)}}
 </style>
@@ -192,6 +217,32 @@ select{padding-right:34px;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     </div>
   </section>
 
+  <!-- ENTRENOS -->
+  <section id="tab-entrenos" class="hidden">
+    <div class="ent">
+      <div class="panel">
+        <h2>Tus alumnas</h2>
+        <ul class="elist" id="entList"></ul>
+      </div>
+      <div class="panel">
+        <div class="calhead">
+          <button class="iconbtn" id="mPrev" aria-label="Mes anterior">‹</button>
+          <div class="day"><strong id="mLabel"></strong><span class="sub" id="mWho"></span></div>
+          <button class="iconbtn" id="mNext" aria-label="Mes siguiente">›</button>
+        </div>
+        <div class="stats" id="entStats"></div>
+        <div class="cal" id="cal"></div>
+        <div class="legend">
+          <span><i style="background:var(--btn)"></i>Entrenó</span>
+          <span><i style="border:2px dashed var(--session)"></i>Programada en la agenda</span>
+          <span><i style="outline:2px solid var(--gym)"></i>Hoy</span>
+        </div>
+        <p class="calmsg" id="calMsg" role="status"></p>
+        <p class="hint">Tocá un día para marcar o desmarcar un entrenamiento. Las sesiones que cargás en la pestaña Día aparecen solas.</p>
+      </div>
+    </div>
+  </section>
+
   <!-- ALUMNAS -->
   <section id="tab-alumnas" class="hidden">
     <div class="panel">
@@ -230,6 +281,7 @@ select{padding-right:34px;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 
 <nav class="tabs" role="tablist">
   <button role="tab" aria-selected="true" data-tab="dia"><span>📅</span>Día</button>
+  <button role="tab" aria-selected="false" data-tab="entrenos"><span>✅</span>Entrenos</button>
   <button role="tab" aria-selected="false" data-tab="alumnas"><span>👟</span>Alumnas</button>
   <button role="tab" aria-selected="false" data-tab="rutina"><span>⏰</span>Rutina</button>
 </nav>
@@ -258,6 +310,7 @@ const DEFAULT=()=>({
     {id:'a8',nombre:'Nueva York',lugar:'NY',freq:3},
     {id:'a9',nombre:'Milán',lugar:'IT',freq:2}
   ],
+  entrenos:{},
   rutina:{despertar:'07:30',gymIni:'08:30',gymFin:'10:00',desayunoFin:'10:45',mensajesFin:'11:20',comida:'13:30',comidaDur:90,merienda:'16:30',cena:'20:15',cenaDur:45,limite:'21:00'},
   sesiones:{
     '2026-10-06':[{id:uid(),alumna:'',ini:'12:30',dur:90},{id:uid(),alumna:'',ini:'18:30',dur:90}]
@@ -456,6 +509,66 @@ function renderRule(){
   $('ruleTxt').textContent=`Confirman el horario del día siguiente hasta las ${S.rutina.limite} de España (${ar} en Argentina, ${ny} en Nueva York, ${ca} en California). A las ${fmt(L+15)} cerrás la agenda y el resto de los huecos queda para planificar o descansar.`;
 }
 
+/* ---------- entrenos ---------- */
+let entSel=null, entMonth=todayMadrid().slice(0,7);
+function agendaFor(id){const m={};for(const[d,arr]of Object.entries(S.sesiones))for(const x of arr)if(x.alumna===id)m[d]=x.ini;return m}
+function manualFor(id){if(!S.entrenos)S.entrenos={};return S.entrenos[id]=S.entrenos[id]||[]}
+function doneSet(id){
+  const t=todayMadrid(),set=new Set(manualFor(id));
+  for(const d of Object.keys(agendaFor(id)))if(d<=t)set.add(d);
+  return set;
+}
+function weekRange(ymd){const d=dow(ymd);const mon=addDays(ymd,-((d+6)%7));return[mon,addDays(mon,6)]}
+function addMonth(ym,n){let[y,m]=ym.split('-').map(Number);m+=n;while(m<1){m+=12;y--}while(m>12){m-=12;y++}return y+'-'+String(m).padStart(2,'0')}
+function renderEnt(){
+  if(!S.alumnas.length){$('entList').innerHTML='<li class="empty">Agregá alumnas en la pestaña Alumnas.</li>';$('cal').innerHTML='';$('entStats').innerHTML='';$('mLabel').textContent='';$('mWho').textContent='';return}
+  if(!entSel||!alumna(entSel))entSel=S.alumnas[0].id;
+  const t=todayMadrid(),[w0,w1]=weekRange(t);
+  $('entList').innerHTML=S.alumnas.map(a=>{
+    const ds=[...doneSet(a.id)];
+    const mes=ds.filter(d=>d.startsWith(entMonth)).length;
+    const sem=ds.filter(d=>d>=w0&&d<=w1).length;
+    return `<li><button data-id="${a.id}" aria-pressed="${a.id===entSel}"><span>${PLACES[a.lugar].f}</span><span class="nm">${esc(a.nombre)}</span><span class="mc"><b>${mes}</b>este mes · ${sem}/${a.freq} sem.</span></button></li>`;
+  }).join('');
+  $('entList').querySelectorAll('button').forEach(b=>b.onclick=()=>{entSel=b.dataset.id;$('calMsg').textContent='';renderEnt();
+    if(window.innerWidth<760)$('mLabel').scrollIntoView({behavior:'smooth',block:'start'})});
+  const a=alumna(entSel),ag=agendaFor(a.id),man=new Set(manualFor(a.id)),done=doneSet(a.id);
+  {const l=labelDate(entMonth+'-01',{month:'long',year:'numeric'});$('mLabel').textContent=l.charAt(0).toUpperCase()+l.slice(1)}
+  $('mWho').textContent=PLACES[a.lugar].f+' '+a.nombre;
+  const all=[...done];
+  const mes=all.filter(d=>d.startsWith(entMonth)).length;
+  const sem=all.filter(d=>d>=w0&&d<=w1).length;
+  $('entStats').innerHTML=`
+    <div class="stat"><b>${mes}</b><span>en ${labelDate(entMonth+'-01',{month:'long'})}</span></div>
+    <div class="stat ${sem>a.freq?'bad':''}"><b>${sem}/${a.freq}</b><span>esta semana</span></div>
+    <div class="stat"><b>${all.length}</b><span>en total</span></div>`;
+  const[y,m]=entMonth.split('-').map(Number);
+  const first=entMonth+'-01',off=(dow(first)+6)%7,nd=new Date(Date.UTC(y,m,0)).getUTCDate();
+  let h=['L','M','X','J','V','S','D'].map(x=>`<div class="wd">${x}</div>`).join('');
+  for(let i=0;i<off;i++)h+='<div class="blank"></div>';
+  for(let d=1;d<=nd;d++){
+    const ymd=entMonth+'-'+String(d).padStart(2,'0');
+    const cls=[];let sub='';
+    if(done.has(ymd)){cls.push('done');if(ag[ymd])sub=ag[ymd]}
+    else if(ag[ymd]){cls.push('plan');sub=ag[ymd]}
+    else if(ymd>t)cls.push('future');
+    if(ymd===t)cls.push('today');
+    h+=`<button data-d="${ymd}" class="${cls.join(' ')}" aria-label="${labelDate(ymd,{weekday:'long',day:'numeric',month:'long'})}${done.has(ymd)?', entrenó':''}">${d}${sub?`<small>${sub}</small>`:''}</button>`;
+  }
+  $('cal').innerHTML=h;
+  $('cal').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    const d=b.dataset.d,msg=$('calMsg'),lbl=labelDate(d,{weekday:'long',day:'numeric'});
+    if(ag[d]){msg.textContent=`El ${lbl} tiene una sesión en la agenda a las ${ag[d]}. Para cambiarla, usá la pestaña Día.`;return}
+    if(d>t){msg.textContent='Los días futuros se cargan como sesión desde la pestaña Día.';return}
+    const arr=manualFor(a.id);
+    if(man.has(d)){S.entrenos[a.id]=arr.filter(x=>x!==d);msg.textContent=`Desmarcado el ${lbl}.`}
+    else{arr.push(d);arr.sort();msg.textContent=`Marcado: entrenó el ${lbl}.`}
+    save();renderEnt();
+  });
+}
+$('mPrev').onclick=()=>{entMonth=addMonth(entMonth,-1);$('calMsg').textContent='';renderEnt()};
+$('mNext').onclick=()=>{entMonth=addMonth(entMonth,1);$('calMsg').textContent='';renderEnt()};
+
 /* ---------- backup ---------- */
 function renderBackup(){
   $('bkInfo').textContent=S.ultimaCopia?('Última copia: '+new Date(S.ultimaCopia).toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'})+'.'):'Todavía no guardaste ninguna copia.';
@@ -488,7 +601,7 @@ $('bkFile').onchange=e=>{
       const obj=JSON.parse(r.result);
       if(!obj.alumnas||!obj.rutina||!obj.sesiones)throw 0;
       if(!confirm('¿Restaurar esta copia? Reemplaza los datos actuales de la agenda.'))return;
-      load(obj);save();renderBackup();renderRutina();renderSelect();renderDay();
+      load(obj);save();renderBackup();renderRutina();renderSelect();renderDay();renderEnt();
       alert('Copia restaurada.');
     }catch(err){alert('Ese archivo no es una copia de la agenda. Elegí un archivo que empiece con "agenda-copia".')}
     $('bkFile').value='';
@@ -517,7 +630,9 @@ $('btnCancel').onclick=()=>stopEdit();
 $('addStu').onclick=()=>{S.alumnas.push({id:uid(),nombre:'Nueva alumna',lugar:'AR',freq:2});save();renderStudents();renderSelect()};
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('.tabs button').forEach(x=>x.setAttribute('aria-selected',x===b));
-  ['dia','alumnas','rutina'].forEach(t=>$('tab-'+t).classList.toggle('hidden',t!==b.dataset.tab));
+  ['dia','entrenos','alumnas','rutina'].forEach(t=>$('tab-'+t).classList.toggle('hidden',t!==b.dataset.tab));
+  document.querySelector('.wrap').classList.toggle('wide',b.dataset.tab==='entrenos');
+  if(b.dataset.tab==='entrenos'){$('calMsg').textContent='';renderEnt()}
   if(b.dataset.tab==='dia'){renderSelect();renderDay()}
   if(b.dataset.tab==='alumnas')renderStudents();
   if(b.dataset.tab==='rutina'){renderRutina();renderBackup()}
@@ -535,7 +650,7 @@ function save(){
     try{await dbRef.set(JSON.parse(JSON.stringify(S)));$('saved').textContent='Guardado'}catch(e){$('saved').textContent='Guardado en este dispositivo'}
   },700);
 }
-function load(obj){if(obj&&obj.alumnas&&obj.rutina&&obj.sesiones){S=obj;S.rutina=Object.assign(DEFAULT().rutina,S.rutina)}}
+function load(obj){if(obj&&obj.alumnas&&obj.rutina&&obj.sesiones){S=obj;S.rutina=Object.assign(DEFAULT().rutina,S.rutina);S.entrenos=S.entrenos||{}}}
 try{const raw=localStorage.getItem(LS);if(raw)load(JSON.parse(raw))}catch(e){}
 setDur(60);renderSelect();renderDay();
 
